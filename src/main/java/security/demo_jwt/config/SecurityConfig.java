@@ -1,35 +1,39 @@
 package security.demo_jwt.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-
-import lombok.RequiredArgsConstructor;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import security.demo_jwt.jwt.JwtAuthenticationFIlter;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    //private final AuthenticationProvider authenticationProvider;
-    @Bean
-    public SecurityFilterChain  securityFilterChain(HttpSecurity http) {
+    private final JwtAuthenticationFIlter jwtAuthenticationFIlter;
+    private final AuthenticationProvider authenticationProvider;
 
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .csrf(csrf -> csrf.disable()) //No se usan cookies
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authRequest ->
                 authRequest
-                .requestMatchers("/auth/**").permitAll() //rutas públicas
-                .anyRequest().authenticated() //rutas protegidas
+                    .requestMatchers("/auth/**").permitAll()
+                    .anyRequest().authenticated()
             )
             .sessionManagement(sessionManager ->
                 sessionManager
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // La sesion es stateless. Si vas a una ruta privada te da error 403 en lugar de redirigirte al login
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            //.authenticationProvider(authenticationProvider)
+            .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthenticationFIlter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }
 }

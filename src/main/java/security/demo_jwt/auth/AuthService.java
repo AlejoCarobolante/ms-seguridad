@@ -29,7 +29,10 @@ class AuthService {
             .dateOfBirth(request.getDateOfBirth())
             .email(request.getEmail())
             .build();
+
         userRepository.save(user);
+        
+
         return AuthResponse.builder()
         .token(jwtService.getToken(user))
         .build();
