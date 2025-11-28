@@ -22,18 +22,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(authRequest ->
-                authRequest
-                    .requestMatchers("/auth/**").permitAll()
-                    .anyRequest().authenticated()
-            )
-            .sessionManagement(sessionManager ->
-                sessionManager
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthenticationFIlter, UsernamePasswordAuthenticationFilter.class)
-            .build();
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(authRequest ->
+                        authRequest
+                                // 1. Abre la puerta a la ruta de H2
+                                .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers("/h2-console/**").permitAll() // <--- AGREGAR ESTA LÍNEA
+                                .anyRequest().authenticated()
+                )
+                // 2. Permite el uso de Frames (Indispensable para que H2 se dibuje)
+                .headers(headers -> headers.frameOptions(frame -> frame.disable())) // <--- AGREGAR ESTA LÍNEA
+                .sessionManagement(sessionManager ->
+                        sessionManager
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authenticationProvider(authenticationProvider)
+                .build();
     }
 }
