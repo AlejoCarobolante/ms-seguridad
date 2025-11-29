@@ -14,6 +14,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import security.demo_jwt.Domain.User;
 
 @Service
 public class JwtService {
@@ -27,7 +28,7 @@ public class JwtService {
     private String getToken(Map<String, Object> extractClaims, UserDetails user) {
         return Jwts.builder()
             .setClaims(extractClaims)
-            .setSubject(user.getUsername())
+            .setSubject(((User) user).getEmail())
             .setIssuedAt(new Date(System.currentTimeMillis()))
             .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
             .signWith(getKey(), SignatureAlgorithm.HS256)
@@ -43,9 +44,11 @@ public class JwtService {
         return getClaim(token, Claims::getSubject);
     }
 
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String userEmail = getEmailFromToken(token);
-        return (userEmail.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        final String email = getEmailFromToken(token);
+        String userEmail = ((User) userDetails).getEmail();
+        return (email.equals(userEmail)) && !isTokenExpired(token);
     }
 
     private Claims getAllClaims(String token){

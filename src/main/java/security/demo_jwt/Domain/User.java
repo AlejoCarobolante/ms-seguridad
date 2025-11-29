@@ -55,6 +55,9 @@ public class User implements UserDetails {
     @Column
     java.time.LocalDateTime resetPasswordTokenExpiry;
 
+    @OneToMany(mappedBy = "user")
+    List<Token> tokens;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "users_roles",

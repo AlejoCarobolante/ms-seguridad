@@ -1,5 +1,6 @@
 package security.demo_jwt.auth;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -50,5 +51,10 @@ public class AuthController {
     public ResponseEntity<String> resetPassword(@RequestBody NewPasswordRequest request){
         authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
+    }
+
+    @PostMapping(value = "refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request){
+        return ResponseEntity.ok(authService.refreshToken(request));
     }
 }
