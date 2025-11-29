@@ -11,6 +11,7 @@ import security.demo_jwt.Domain.Role;
 import security.demo_jwt.Domain.User;
 import security.demo_jwt.Domain.UserRepository;
 import security.demo_jwt.Domain.RoleRepository;
+import security.demo_jwt.email.UserVerificationEmailService;
 import security.demo_jwt.jwt.JwtService;
 
 import java.util.List;
@@ -25,6 +26,7 @@ class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final UserVerificationEmailService userVerificationEmailService;
 
     public AuthResponse login(LoginRequest request) {
 
@@ -38,8 +40,9 @@ class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
 
-        Role userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("Error: Rol USER no encontrado"));
+        Role initialRole = roleRepository.findByName("PENDING_VALIDATION")
+                .orElseThrow(() -> new RuntimeException("Error: Rol PENDING_VALIDATION no encontrado"));
+
         User user = User.builder()
             .username(request.getUsername())
             .password(passwordEncoder.encode(request.getPassword()))
@@ -47,10 +50,12 @@ class AuthService {
             .lastName(request.getLastName())
             .dateOfBirth(request.getDateOfBirth())
             .email(request.getEmail())
-                .roles(List.of(userRole))
+                .roles(List.of(initialRole))
                 .build();
 
         userRepository.save(user);
+
+        userVerificationEmailService.sendVerificationEmail(user.getEmail(), user.getUsername());
         
 
         return AuthResponse.builder()
