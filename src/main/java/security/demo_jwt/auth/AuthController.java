@@ -2,6 +2,7 @@ package security.demo_jwt.auth;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,8 +28,8 @@ public class AuthController {
     }
 
     @GetMapping(value = "verify")
-    public ResponseEntity<String> verify(@RequestParam String code){
-        String mensaje = authService.verifyUser(code);
-        return ResponseEntity.ok(mensaje);
+    public ModelAndView verify(@RequestParam String code){
+        authService.verifyUser(code);
+        return new ModelAndView("verified-success");
     }
 }
