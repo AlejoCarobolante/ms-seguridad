@@ -27,16 +27,17 @@ public class SecurityConfig {
                         authRequest
                                 // 1. Abre la puerta a la ruta de H2
                                 .requestMatchers("/auth/**").permitAll()
-                                .requestMatchers("/h2-console/**").permitAll() // <--- AGREGAR ESTA LÍNEA
+                                .requestMatchers("/h2-console/**").permitAll()
                                 .anyRequest().authenticated()
                 )
-                // 2. Permite el uso de Frames (Indispensable para que H2 se dibuje)
-                .headers(headers -> headers.frameOptions(frame -> frame.disable())) // <--- AGREGAR ESTA LÍNEA
+                // 2. Permite el uso de Frames
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .sessionManagement(sessionManager ->
                         sessionManager
                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthenticationFIlter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 }

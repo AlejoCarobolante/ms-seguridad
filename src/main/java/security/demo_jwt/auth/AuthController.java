@@ -1,10 +1,7 @@
 package security.demo_jwt.auth;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,5 +24,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
 
         return ResponseEntity.ok(authService.register(request));
-    } 
+    }
+
+    @GetMapping(value = "verify")
+    public ResponseEntity<String> verify(@RequestParam String code){
+        String mensaje = authService.verifyUser(code);
+        return ResponseEntity.ok(mensaje);
+    }
 }
