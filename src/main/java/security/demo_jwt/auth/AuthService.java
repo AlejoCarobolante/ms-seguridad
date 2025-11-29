@@ -208,4 +208,40 @@ class AuthService {
                 )
                 .collect(Collectors.toList());
     }
+
+    public List<SessionResponse> getSessionByUserId(Integer userId){
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(()-> new RuntimeException("Usuario no encontrado"));
+
+        List<Token> tokens = tokenRepository.findAllValidTokenByUser(targetUser.getId());
+
+        return tokens.stream()
+                .map(t -> SessionResponse.builder()
+                        .id(t.getId())
+                        .deviceInfo(t.getDeviceInfo())
+                        .ipAdress(t.getIpAdress())
+                        .isCurrentSession(false)
+                        .build()
+                )
+                .collect(Collectors.toList());
+    }
+
+    public void closeSession(Integer tokenId, String currentToken){
+        String cleanToken = currentToken.startsWith("Bearer ")?currentToken.substring(7):currentToken;
+        String email = jwtService.getEmailFromToken(cleanToken);
+        User currentUser = userRepository.findByEmail(email).orElseThrow();
+
+        Token tokenToDelete = tokenRepository.findById(tokenId)
+                .orElseThrow(()-> new RuntimeException("Sesion no encontrada"));
+
+        boolean isOwner = tokenToDelete.getUser().getId().equals(currentUser.getId());
+
+        boolean isAdmin = currentUser.getRoles().stream()
+                        .anyMatch(role -> role.getName().equals("ADMIN"));
+
+        if(!isAdmin && !isOwner){
+            throw new RuntimeException("Permisos insuficientes para cerrar sesion");
+        }
+        tokenRepository.delete(tokenToDelete);
+    }
 }
