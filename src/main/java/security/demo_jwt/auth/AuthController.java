@@ -1,11 +1,14 @@
 package security.demo_jwt.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
@@ -56,5 +59,12 @@ public class AuthController {
     @PostMapping(value = "refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(HttpServletRequest request){
         return ResponseEntity.ok(authService.refreshToken(request));
+    }
+
+    @GetMapping(value = "sessions")
+    public ResponseEntity<List<SessionResponse>> getMySessions(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+    ){
+        return ResponseEntity.ok(authService.getUserSessions(token));
     }
 }

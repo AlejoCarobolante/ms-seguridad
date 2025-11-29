@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -186,5 +188,24 @@ class AuthService {
             }
         }
         throw new RuntimeException("Token invalido");
+    }
+
+    public List<SessionResponse> getUserSessions(String currentToken){
+        String cleanToken = currentToken.startsWith("Bearer ")?currentToken.substring(7):currentToken;
+        String email = jwtService.getEmailFromToken(cleanToken);
+
+        User user = userRepository.findByEmail(email).orElseThrow();
+
+        List<Token> tokens = tokenRepository.findAllValidTokenByUser(user.getId());
+
+        return tokens.stream()
+                .map(t -> SessionResponse.builder()
+                        .id(t.getId())
+                        .deviceInfo(t.getDeviceInfo())
+                        .ipAdress(t.getIpAdress())
+                        .isCurrentSession(t.getToken().equals(cleanToken))
+                        .build()
+                )
+                .collect(Collectors.toList());
     }
 }
