@@ -45,7 +45,7 @@ class AuthService {
         saveUserToken(user, jwtToken);
 
         return AuthResponse.builder()
-                .token(jwtToken)
+                .accessToken(jwtToken)
                 .build();
     }
 
@@ -75,7 +75,7 @@ class AuthService {
         saveUserToken(savedUser, jwtToken);
 
         return AuthResponse.builder()
-                .token(jwtToken)
+                .accessToken(jwtToken)
                 .build();
     }
 
@@ -164,11 +164,16 @@ class AuthService {
 
             if (jwtService.isTokenValid(refreshToken, user)){
                 var accessToken = jwtService.getToken(user);
+                var newRefreshToken = jwtService.getRefreshToken(user);
+
                 revokeAllUserTokens(user);
+
                 saveUserToken(user, accessToken);
+                saveUserToken(user, newRefreshToken);
 
                 return AuthResponse.builder()
-                        .token(accessToken)
+                        .accessToken(accessToken)
+                        .refreshToken(newRefreshToken)
                         .build();
             }
         }

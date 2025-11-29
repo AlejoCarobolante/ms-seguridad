@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -19,20 +20,34 @@ import security.demo_jwt.Domain.User;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    @Value("${application.security.jwt.secret-key}")
+    private String SECRET_KEY;
 
+    @Value("${application.security.jwt.expiration}")
+    private long jwtExpiration;
+
+    @Value("${application.security.jwt.refresh-token.expiration}")
+    private long refreshExpiration;
+
+    // --- 1. Generar Access Token (Usa el tiempo corto) ---
     public String getToken(UserDetails user) {
-        return getToken(new HashMap<>(), user);
+        return buildToken(new HashMap<>(), user, jwtExpiration);
     }
 
-    private String getToken(Map<String, Object> extractClaims, UserDetails user) {
+    // --- 2. Generar Refresh Token (Usa el tiempo largo) ---
+    public String getRefreshToken(UserDetails user) {
+        return buildToken(new HashMap<>(), user, refreshExpiration);
+    }
+
+    // --- 3. Método Constructor Privado (Recibe la expiración) ---
+    private String buildToken(Map<String, Object> extractClaims, UserDetails user, long expiration) {
         return Jwts.builder()
-            .setClaims(extractClaims)
-            .setSubject(((User) user).getEmail())
-            .setIssuedAt(new Date(System.currentTimeMillis()))
-            .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
-            .signWith(getKey(), SignatureAlgorithm.HS256)
-            .compact();
+                .setClaims(extractClaims)
+                .setSubject(((User) user).getEmail()) // Mantenemos tu lógica de usar Email
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration)) // <--- AQUI SE USA LA VARIABLE
+                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     private Key getKey() {
@@ -44,7 +59,7 @@ public class JwtService {
         return getClaim(token, Claims::getSubject);
     }
 
-
+    // Tu validación corregida (Email vs Email)
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String email = getEmailFromToken(token);
         String userEmail = ((User) userDetails).getEmail();
