@@ -39,6 +39,13 @@ public class AuthController {
         return ResponseEntity.ok("Se ha enviado un enlace al correo.");
     }
 
+    @GetMapping(value = "recover-password")
+    public ModelAndView showChangePasswordPage(@RequestParam String token){
+        ModelAndView mav = new ModelAndView("change-password");
+        mav.addObject("token", token);
+        return mav;
+    }
+
     @PostMapping(value = "reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody NewPasswordRequest request){
         authService.resetPassword(request.getToken(), request.getNewPassword());

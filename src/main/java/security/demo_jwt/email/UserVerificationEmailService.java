@@ -14,27 +14,26 @@ import org.thymeleaf.context.Context;
 public class UserVerificationEmailService {
 
     private final JavaMailSender javaMailSender;
-    private final TemplateEngine templateEngine; // <--- 1. Inyectamos el motor de plantillas
+    private final TemplateEngine templateEngine;
 
     public void sendVerificationEmail(String to, String username, String code) {
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
 
-            // 2. Preparamos las variables que van al HTML
             Context context = new Context();
             context.setVariable("username", username);
-            // Armamos el link aquí mismo
+
             String link = "http://localhost:8081/auth/verify?code=" + code;
             context.setVariable("link", link);
 
-            // 3. Procesamos la plantilla "mail-template.html" con las variables
+
             String htmlContent = templateEngine.process("mail-template", context);
 
             helper.setText(htmlContent, true); // true = Es HTML
             helper.setTo(to);
-            helper.setSubject("🚀 Activa tu cuenta en Parking App");
-            helper.setFrom("no-reply@parking.com");
+            helper.setSubject("🚀 Activa tu cuenta");
+            helper.setFrom("no-reply@system.com");
 
             javaMailSender.send(mimeMessage);
             System.out.println("✅ Email enviado a: " + to);

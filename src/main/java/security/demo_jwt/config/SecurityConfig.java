@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 // 1. Abre la puerta a la ruta de H2
                                 .requestMatchers("/auth/**").permitAll()
                                 .requestMatchers("/h2-console/**").permitAll()
+                                .requestMatchers("/error").permitAll()
                                 .anyRequest().authenticated()
                 )
                 // 2. Permite el uso de Frames
