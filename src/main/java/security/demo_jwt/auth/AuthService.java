@@ -31,37 +31,37 @@ class AuthService {
     private final PasswordRecoverEmailService passwordRecoverEmailService;
     private final TokenRepository tokenRepository;
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
         );
 
-        var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+        var user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow();
 
         var jwtToken = jwtService.getToken(user);
 
         revokeAllUserTokens(user);
 
-        saveUserToken(user, jwtToken);
+        saveUserToken(user, jwtToken, request);
 
         return AuthResponse.builder()
                 .accessToken(jwtToken)
                 .build();
     }
 
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest registerRequest, HttpServletRequest request) {
         String generatedCode = java.util.UUID.randomUUID().toString();
 
         Role initialRole = roleRepository.findByName("PENDING_VALIDATION")
                 .orElseThrow(() -> new RuntimeException("Error: Rol PENDING_VALIDATION no encontrado"));
 
         User user = User.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .dateOfBirth(request.getDateOfBirth())
-                .email(request.getEmail())
+                .username(registerRequest.getUsername())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .firstName(registerRequest.getFirstName())
+                .lastName(registerRequest.getLastName())
+                .dateOfBirth(registerRequest.getDateOfBirth())
+                .email(registerRequest.getEmail())
                 .verificationCode(generatedCode)
                 .roles(List.of(initialRole))
                 .build();
@@ -72,7 +72,7 @@ class AuthService {
 
         var jwtToken = jwtService.getToken(user);
 
-        saveUserToken(savedUser, jwtToken);
+        saveUserToken(savedUser, jwtToken, request);
 
         return AuthResponse.builder()
                 .accessToken(jwtToken)
@@ -124,12 +124,20 @@ class AuthService {
         userRepository.save(user);
     }
 
-    private void saveUserToken(User user, String jwtToken){
+    private void saveUserToken(User user, String jwtToken, HttpServletRequest request){
+
+        String userAgent = request.getHeader("User-Agent");
+        if(userAgent == null) userAgent = "Unknown";
+
+        String ip = request.getRemoteAddr();
+
         var token = Token.builder()
                 .user(user)
                 .token(jwtToken)
                 .expired(false)
                 .revoked(false)
+                .ipAdress(ip)
+                .deviceInfo(userAgent)
                 .build();
         tokenRepository.save(token);
     }
@@ -168,8 +176,8 @@ class AuthService {
 
                 revokeAllUserTokens(user);
 
-                saveUserToken(user, accessToken);
-                saveUserToken(user, newRefreshToken);
+                saveUserToken(user, accessToken, request);
+                saveUserToken(user, newRefreshToken, request);
 
                 return AuthResponse.builder()
                         .accessToken(accessToken)

@@ -28,6 +28,12 @@ public class Token {
     @Column
     boolean expired;
 
+    @Column
+    String ipAdress;
+
+    @Column
+    String deviceInfo;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     public User user;
