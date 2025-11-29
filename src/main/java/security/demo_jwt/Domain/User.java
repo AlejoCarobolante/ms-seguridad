@@ -49,6 +49,12 @@ public class User implements UserDetails {
     @Column
     String verificationCode;
 
+    @Column
+    String resetPasswordToken;
+
+    @Column
+    java.time.LocalDateTime resetPasswordTokenExpiry;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "users_roles",

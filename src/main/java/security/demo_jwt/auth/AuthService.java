@@ -11,11 +11,14 @@ import security.demo_jwt.Domain.Role;
 import security.demo_jwt.Domain.User;
 import security.demo_jwt.Domain.UserRepository;
 import security.demo_jwt.Domain.RoleRepository;
+import security.demo_jwt.email.PasswordRecoverEmailService;
 import security.demo_jwt.email.UserVerificationEmailService;
 import security.demo_jwt.jwt.JwtService;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,7 @@ class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final UserVerificationEmailService userVerificationEmailService;
+    private final PasswordRecoverEmailService passwordRecoverEmailService;
 
     public AuthResponse login(LoginRequest request) {
 
@@ -81,4 +85,33 @@ class AuthService {
         return "Cuenta verificada con exito";
     }
 
+    public void forgotPassword(String email){
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String token = UUID.randomUUID().toString();
+
+        user.setResetPasswordToken(token);
+        user.setResetPasswordTokenExpiry(LocalDateTime.now().plusMinutes(10));
+
+        userRepository.save(user);
+
+        passwordRecoverEmailService.sendResetEmail(user.getEmail(), user.getUsername(), token);
+    }
+
+    public void resetPassword(String token, String newPassword){
+        User user = userRepository.findByResetPasswordToken(token)
+                .orElseThrow(() -> new RuntimeException("Token invalido."));
+
+        if(user.getResetPasswordTokenExpiry().isBefore(java.time.LocalDateTime.now())){
+            throw new RuntimeException("El token ha expirado.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        user.setResetPasswordToken(null);
+        user.setResetPasswordTokenExpiry(null);
+
+        userRepository.save(user);
+    }
 }
