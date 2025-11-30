@@ -1,7 +1,6 @@
-package security.demo_jwt.auth;
+package security.demo_jwt.role;
 
 
-import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -9,7 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import security.demo_jwt.Domain.Role;
+import security.demo_jwt.auth.AuthService;
+import security.demo_jwt.domain.Role;
 
 import java.util.List;
 

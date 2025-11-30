@@ -15,7 +15,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import security.demo_jwt.Domain.User;
+import security.demo_jwt.domain.User;
 
 @Service
 public class JwtService {

@@ -2,15 +2,18 @@ package security.demo_jwt.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-import security.demo_jwt.Domain.*;
+import security.demo_jwt.audit.AuditService;
+import security.demo_jwt.domain.*;
 import security.demo_jwt.email.PasswordRecoverEmailService;
 import security.demo_jwt.email.UserVerificationEmailService;
 import security.demo_jwt.jwt.JwtService;
+import security.demo_jwt.role.RoleRequest;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,7 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-class AuthService {
+public class AuthService {
 
 
     private final UserRepository userRepository;
@@ -33,6 +36,7 @@ class AuthService {
     private final PasswordRecoverEmailService passwordRecoverEmailService;
     private final TokenRepository tokenRepository;
     private final ClientAppRepository clientAppRepository;
+    private final AuditService auditService;
 
 
     public AuthResponse register(RegisterRequest registerRequest, HttpServletRequest request, String apiKey) {
@@ -62,6 +66,14 @@ class AuthService {
 
         var savedUser = userRepository.save(user);
 
+        auditService.log(
+                AuditAction.REGISTER_SUCCESS,
+                user.getEmail(),
+                "Usuario registrado con rol default",
+                app.getName(),
+                request
+        );
+
         userVerificationEmailService.sendVerificationEmail(user.getEmail(), user.getUsername(), user.getVerificationCode(), app.getName());
 
         var jwtToken = jwtService.getToken(user);
@@ -84,6 +96,26 @@ class AuthService {
 
 
         var user = userRepository.findByEmailAndClientApp(loginRequest.getEmail(), app).orElseThrow();
+
+        try {
+            // INTENTO DE LOGIN
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getEmail() + ":" + apiKey,
+                            loginRequest.getPassword()
+                    )
+            );
+        } catch (BadCredentialsException e) {
+
+            auditService.log(
+                    AuditAction.LOGIN_FAILED,
+                    loginRequest.getEmail(),
+                    "Credenciales incorrectas",
+                    app.getName(),
+                    request
+            );
+            throw e;
+        }
 
         var jwtToken = jwtService.getToken(user);
 

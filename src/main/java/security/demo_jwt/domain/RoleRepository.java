@@ -1,4 +1,4 @@
-package security.demo_jwt.Domain;
+package security.demo_jwt.domain;
 
 import java.util.List;
 import java.util.Optional;

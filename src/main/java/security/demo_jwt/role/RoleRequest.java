@@ -1,4 +1,4 @@
-package security.demo_jwt.auth;
+package security.demo_jwt.role;
 
 
 import jakarta.validation.constraints.NotBlank;

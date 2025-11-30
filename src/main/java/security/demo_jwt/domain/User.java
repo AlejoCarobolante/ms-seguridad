@@ -1,10 +1,9 @@
-package security.demo_jwt.Domain;
+package security.demo_jwt.domain;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
