@@ -37,5 +37,5 @@ public class AuditLog {
     String clientAppName;
 
     @Column(nullable = false)
-    LocalDateTime timeStamp;
+    LocalDateTime timestamp;
 }

@@ -37,6 +37,7 @@ public class AuthService {
     private final TokenRepository tokenRepository;
     private final ClientAppRepository clientAppRepository;
     private final AuditService auditService;
+    private final LoginAttemptService loginAttemptService;
 
 
     public AuthResponse register(RegisterRequest registerRequest, HttpServletRequest request, String apiKey) {
@@ -87,18 +88,29 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request, String apiKey) {
 
+        if(loginAttemptService.isBlocked(loginRequest.getEmail())){
+            throw new RuntimeException("Cuenta temporalmente bloqueada.");
+        }
+
         ClientApp app = clientAppRepository.findByApiKey(apiKey)
                         .orElseThrow(()->new RuntimeException("API KEY Invalida"));
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail() + ":" + apiKey, loginRequest.getPassword())
-        );
+        try{
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail() + ":" + apiKey, loginRequest.getPassword())
+            );
+
+            loginAttemptService.loginSucceded(loginRequest.getEmail());
+        } catch (BadCredentialsException e){
+            loginAttemptService.loginFailed(loginRequest.getEmail());
+            throw e;
+        }
+
 
 
         var user = userRepository.findByEmailAndClientApp(loginRequest.getEmail(), app).orElseThrow();
 
         try {
-            // INTENTO DE LOGIN
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getEmail() + ":" + apiKey,

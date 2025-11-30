@@ -9,9 +9,12 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import security.demo_jwt.domain.ClientApp;
+import security.demo_jwt.domain.ClientAppRepository;
 import security.demo_jwt.domain.UserRepository;
 
 @Configuration
@@ -19,6 +22,7 @@ import security.demo_jwt.domain.UserRepository;
 public class ApplicationConfig {
 
     private final UserRepository userRepository;
+    private final ClientAppRepository clientAppRepository;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -35,10 +39,26 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return userIdString -> {
-            Integer userId = Integer.parseInt(userIdString);
-            return userRepository.findById(userId)
-                    .orElseThrow(()-> new RuntimeException("Usuario no encontrado"));
+        return input -> {
+            if(input.contains(":")){
+                String[] parts = input.split(":");
+                String email = parts[0];
+                String apiKey = parts[1];
+
+                ClientApp app = clientAppRepository.findByApiKey(apiKey)
+                        .orElseThrow(()-> new UsernameNotFoundException("App no valida."));
+
+                return userRepository.findByEmailAndClientApp(email, app)
+                        .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+            }
+
+            try {
+                Integer userId = Integer.parseInt(input);
+                return userRepository.findById(userId)
+                        .orElseThrow(()-> new UsernameNotFoundException("Usuario no encontrado"));
+            } catch (NumberFormatException e){
+                throw new UsernameNotFoundException("Formato de identificador no valido: " + input);
+            }
         };
     }
 

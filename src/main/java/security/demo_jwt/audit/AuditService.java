@@ -28,7 +28,7 @@ public class AuditService {
                 .description(detail)
                 .clientAppName(appName)
                 .ipAdress(ip)
-                .timeStamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now())
                 .build();
 
         auditLogRepository.save(logEntry);
