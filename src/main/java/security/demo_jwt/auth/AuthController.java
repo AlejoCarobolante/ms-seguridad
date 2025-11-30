@@ -46,7 +46,7 @@ public class AuthController {
         return new ModelAndView("verified-success");
     }
 
-    @PostMapping(value = "recover-password")
+    @PostMapping(value = "forgot-password")
     public ResponseEntity<String> recoverPassword(@RequestBody RecoverPasswordRequest request, @RequestHeader("X-Client-Id") String apiKey){
         authService.forgotPassword(request.getEmail(), apiKey);
         return ResponseEntity.ok("Se ha enviado un enlace al correo.");

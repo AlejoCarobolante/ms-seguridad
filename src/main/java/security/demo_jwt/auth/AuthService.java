@@ -326,7 +326,7 @@ class AuthService {
         if(isSudo){
             return roleRepository.findAll();
         }else {
-            return roleRepository.findAllClientAppId(currentUser.getClientApp().getId());
+            return roleRepository.findAllByClientAppId(currentUser.getClientApp().getId());
         }
     }
 

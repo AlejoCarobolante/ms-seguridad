@@ -9,6 +9,6 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
     Optional<Role> findByName(String name);
     Optional<Role> findById(int Id);
     Optional<Role> findByNameOrId(String name, int Id);
-    List<Role> findAllClientAppId(Integer id);
+    List<Role> findAllByClientAppId(Integer clientAppId);
 
 }
