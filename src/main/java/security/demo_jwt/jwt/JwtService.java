@@ -29,23 +29,25 @@ public class JwtService {
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
-    // --- 1. Generar Access Token (Usa el tiempo corto) ---
+
     public String getToken(UserDetails user) {
         return buildToken(new HashMap<>(), user, jwtExpiration);
     }
 
-    // --- 2. Generar Refresh Token (Usa el tiempo largo) ---
+
     public String getRefreshToken(UserDetails user) {
         return buildToken(new HashMap<>(), user, refreshExpiration);
     }
 
-    // --- 3. Método Constructor Privado (Recibe la expiración) ---
+
     private String buildToken(Map<String, Object> extractClaims, UserDetails user, long expiration) {
+        String userId = ((User) user).getId().toString();
+
         return Jwts.builder()
                 .setClaims(extractClaims)
-                .setSubject(((User) user).getEmail()) // Mantenemos tu lógica de usar Email
+                .setSubject(userId)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration)) // <--- AQUI SE USA LA VARIABLE
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -55,13 +57,13 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String getEmailFromToken(String token) {
+    public String getUserIdFromToken(String token) {
         return getClaim(token, Claims::getSubject);
     }
 
-    // Tu validación corregida (Email vs Email)
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String email = getEmailFromToken(token);
+        final String email = getUserIdFromToken(token);
         String userEmail = ((User) userDetails).getEmail();
         return (email.equals(userEmail)) && !isTokenExpired(token);
     }

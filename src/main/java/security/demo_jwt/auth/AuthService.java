@@ -32,26 +32,17 @@ class AuthService {
     private final UserVerificationEmailService userVerificationEmailService;
     private final PasswordRecoverEmailService passwordRecoverEmailService;
     private final TokenRepository tokenRepository;
+    private final ClientAppRepository clientAppRepository;
 
-    public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
-        );
 
-        var user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow();
+    public AuthResponse register(RegisterRequest registerRequest, HttpServletRequest request, String apiKey) {
 
-        var jwtToken = jwtService.getToken(user);
+        ClientApp app = clientAppRepository.findByApiKey(apiKey)
+                .orElseThrow(()-> new RuntimeException("API KEY Invalida."));
+        if (userRepository.findByEmailAndClientApp(registerRequest.getEmail(), app).isPresent()) {
+            throw new RuntimeException("El usuario ya existe en esta organizacion.");
+        }
 
-        revokeAllUserTokens(user);
-
-        saveUserToken(user, jwtToken, request);
-
-        return AuthResponse.builder()
-                .accessToken(jwtToken)
-                .build();
-    }
-
-    public AuthResponse register(RegisterRequest registerRequest, HttpServletRequest request) {
         String generatedCode = java.util.UUID.randomUUID().toString();
 
         Role initialRole = roleRepository.findByName("PENDING_VALIDATION")
@@ -65,16 +56,40 @@ class AuthService {
                 .dateOfBirth(registerRequest.getDateOfBirth())
                 .email(registerRequest.getEmail())
                 .verificationCode(generatedCode)
-                .roles(List.of(initialRole))
+                .roles(new ArrayList<>(List.of(initialRole)))
+                .clientApp(app)
                 .build();
 
         var savedUser = userRepository.save(user);
 
-        userVerificationEmailService.sendVerificationEmail(user.getEmail(), user.getUsername(), user.getVerificationCode());
+        userVerificationEmailService.sendVerificationEmail(user.getEmail(), user.getUsername(), user.getVerificationCode(), app.getName());
 
         var jwtToken = jwtService.getToken(user);
 
         saveUserToken(savedUser, jwtToken, request);
+
+        return AuthResponse.builder()
+                .accessToken(jwtToken)
+                .build();
+    }
+
+    public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request, String apiKey) {
+
+        ClientApp app = clientAppRepository.findByApiKey(apiKey)
+                        .orElseThrow(()->new RuntimeException("API KEY Invalida"));
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail() + ":" + apiKey, loginRequest.getPassword())
+        );
+
+
+        var user = userRepository.findByEmailAndClientApp(loginRequest.getEmail(), app).orElseThrow();
+
+        var jwtToken = jwtService.getToken(user);
+
+        revokeAllUserTokens(user);
+
+        saveUserToken(user, jwtToken, request);
 
         return AuthResponse.builder()
                 .accessToken(jwtToken)
@@ -96,8 +111,10 @@ class AuthService {
         return "Cuenta verificada con exito";
     }
 
-    public void forgotPassword(String email){
-        User user = userRepository.findByEmail(email)
+    public void forgotPassword(String email, String apiKey){
+        ClientApp app = clientAppRepository.findByApiKey(apiKey)
+                .orElseThrow(() -> new RuntimeException("API KEY Invalida"));
+        User user = userRepository.findByEmailAndClientApp(email, app)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         String token = UUID.randomUUID().toString();
@@ -159,25 +176,27 @@ class AuthService {
     public AuthResponse refreshToken(HttpServletRequest request){
         final String authHeader = request.getHeader("Authorization");
         final String refreshToken;
-        final String userEmail;
+        final String userIdString;
 
-        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new RuntimeException("Refresh Token no encontrado");
         }
 
         refreshToken = authHeader.substring(7);
-        userEmail = jwtService.getEmailFromToken(refreshToken);
+        userIdString = jwtService.getUserIdFromToken(refreshToken);
 
-        if(userEmail != null){
-            var user = this.userRepository.findByEmail(userEmail)
-                    .orElseThrow();
+        if(userIdString != null){
+
+            Integer userId = Integer.parseInt(userIdString);
+
+            var user = this.userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado para este token"));
 
             if (jwtService.isTokenValid(refreshToken, user)){
                 var accessToken = jwtService.getToken(user);
                 var newRefreshToken = jwtService.getRefreshToken(user);
 
                 revokeAllUserTokens(user);
-
                 saveUserToken(user, accessToken, request);
                 saveUserToken(user, newRefreshToken, request);
 
@@ -191,10 +210,13 @@ class AuthService {
     }
 
     public List<SessionResponse> getUserSessions(String currentToken){
-        String cleanToken = currentToken.startsWith("Bearer ")?currentToken.substring(7):currentToken;
-        String email = jwtService.getEmailFromToken(cleanToken);
 
-        User user = userRepository.findByEmail(email).orElseThrow();
+        String cleanToken = currentToken.startsWith("Bearer ")?currentToken.substring(7):currentToken;
+        String userIdString = jwtService.getUserIdFromToken(cleanToken);
+
+        Integer userId = Integer.parseInt(userIdString);
+        User user = userRepository.findById(userId) // findById(Integer) ahora funciona
+                .orElseThrow(() -> new RuntimeException("Usuario logueado no encontrado."));
 
         List<Token> tokens = tokenRepository.findAllValidTokenByUser(user.getId());
 
@@ -228,8 +250,9 @@ class AuthService {
 
     public void closeSession(Integer tokenId, String currentToken){
         String cleanToken = currentToken.startsWith("Bearer ")?currentToken.substring(7):currentToken;
-        String email = jwtService.getEmailFromToken(cleanToken);
-        User currentUser = userRepository.findByEmail(email).orElseThrow();
+        String userId = jwtService.getUserIdFromToken(cleanToken);
+        Integer currentUserId = Integer.parseInt(userId);
+        User currentUser = userRepository.findById(currentUserId).orElseThrow();
 
         Token tokenToDelete = tokenRepository.findById(tokenId)
                 .orElseThrow(()-> new RuntimeException("Sesion no encontrada"));

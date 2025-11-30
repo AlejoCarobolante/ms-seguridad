@@ -17,7 +17,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity 
-@Table(name="users")
+@Table(name="users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"email", "client_app_id"})
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -40,7 +42,7 @@ public class User implements UserDetails {
     @Column(nullable = false)  
     String lastName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     String email;
 
     @Column(nullable = false)
@@ -65,6 +67,10 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "roles_id")
     )
     List<Role> roles;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_app_id", nullable = false)
+    ClientApp clientApp;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

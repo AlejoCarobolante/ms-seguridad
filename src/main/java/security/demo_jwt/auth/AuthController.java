@@ -1,6 +1,7 @@
 package security.demo_jwt.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,15 +22,15 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping(value = "login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, @RequestHeader("X-Client-Id") String apiKey, HttpServletRequest request) {
 
-        return ResponseEntity.ok(authService.login(loginRequest ,request));
+        return ResponseEntity.ok(authService.login(loginRequest, request, apiKey));
     }    
 
     @PostMapping(value = "register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest, HttpServletRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest, @RequestHeader("X-Client-Id") String apiKey, HttpServletRequest request) {
 
-        return ResponseEntity.ok(authService.register(registerRequest, request));
+        return ResponseEntity.ok(authService.register(registerRequest, request, apiKey));
     }
 
     @GetMapping(value = "verify")
@@ -38,9 +39,9 @@ public class AuthController {
         return new ModelAndView("verified-success");
     }
 
-    @PostMapping(value = "forgot-password")
-    public ResponseEntity<String> recoverPassword(@RequestBody RecoverPasswordRequest request){
-        authService.forgotPassword(request.getEmail());
+    @PostMapping(value = "recover-password")
+    public ResponseEntity<String> recoverPassword(@RequestBody RecoverPasswordRequest request, @RequestHeader("X-Client-Id") String apiKey){
+        authService.forgotPassword(request.getEmail(), apiKey);
         return ResponseEntity.ok("Se ha enviado un enlace al correo.");
     }
 
