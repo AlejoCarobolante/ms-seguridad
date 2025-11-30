@@ -96,6 +96,24 @@ class AuthService {
                 .build();
     }
 
+    public void logout(String authHeader){
+
+        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+            return;
+        }
+
+        String jwt = authHeader.substring(7);
+
+        var storedToken = tokenRepository.findByToken(jwt)
+                .orElse(null);
+
+        if(storedToken != null && !storedToken.isExpired() && !storedToken.isRevoked()){
+            storedToken.setExpired(true);
+            storedToken.setRevoked(true);
+            tokenRepository.save(storedToken);
+        }
+    }
+
     public String verifyUser(String code){
         User user = userRepository.findByVerificationCode(code)
                 .orElseThrow(() -> new RuntimeException("Codigo o Usuario Invalido"));
@@ -266,5 +284,89 @@ class AuthService {
             throw new RuntimeException("Permisos insuficientes para cerrar sesion");
         }
         tokenRepository.delete(tokenToDelete);
+    }
+
+    private User getCurrentUserFromToken(String token){
+        final String cleanToken = token.startsWith("Bearer ")?token.substring(7):token;
+        final String userIdString = jwtService.getUserIdFromToken(cleanToken);
+
+        if(userIdString == null){
+            throw new RuntimeException("Token invalido o sin usuario");
+        }
+
+        Integer userId;
+        try {
+            userId = Integer.parseInt(userIdString);
+        } catch (NumberFormatException e){
+            throw new RuntimeException("ID de usuario en el token no es un numero valido");
+        }
+
+        return userRepository.findById(userId)
+                .orElseThrow(()-> new RuntimeException("Usuario no encontrado para el ID en el token"));
+    }
+
+    public Role createRole(RoleRequest request, String token){
+        User creator = getCurrentUserFromToken(token);
+
+        Role newRole = Role.builder()
+                .name(request.getName())
+                .creator(creator)
+                .clientApp(creator.getClientApp())
+                .build();
+
+        return roleRepository.save(newRole);
+    }
+
+    public List<Role> getAllRoles(String currentToken){
+        User currentUser = getCurrentUserFromToken(currentToken);
+
+        boolean isSudo = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("SUDO"));
+
+        if(isSudo){
+            return roleRepository.findAll();
+        }else {
+            return roleRepository.findAllClientAppId(currentUser.getClientApp().getId());
+        }
+    }
+
+    public Role updateRole(Integer roleId, RoleRequest request, String currentToken){
+        User currentUser = getCurrentUserFromToken(currentToken);
+        Role roleToUpdate = roleRepository.findById(roleId)
+                .orElseThrow(()-> new RuntimeException("Rol no encontrado."));
+
+        boolean isSudo = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("SUDO"));
+        if (!isSudo) {
+            if (!roleToUpdate.getClientApp().getId().equals(currentUser.getClientApp().getId())) {
+
+                throw new RuntimeException("Acceso denegado: El rol pertenece a otra organización (Tenant).");
+            }
+        }
+        roleToUpdate.setName(request.getName());
+
+        return roleRepository.save(roleToUpdate);
+    }
+
+    public void deleteRole(Integer roleId, String currentToken) {
+        User currentUser = getCurrentUserFromToken(currentToken);
+        Role roleToDelete = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Rol a eliminar no encontrado."));
+
+        if (roleToDelete.getUsers() != null && !roleToDelete.getUsers().isEmpty()) {
+            throw new RuntimeException("No se puede eliminar el rol: Está asignado a uno o más usuarios.");
+        }
+
+        boolean isSudo  = currentUser.getRoles().stream()
+                .anyMatch(r -> r.getName().equals("SUDO"));
+
+        if (!isSudo) {
+            if (!roleToDelete.getClientApp().getId().equals(currentUser.getClientApp().getId())) {
+
+                throw new RuntimeException("Acceso denegado: El rol pertenece a otra organización (Tenant).");
+            }
+        }
+
+        roleRepository.delete(roleToDelete);
     }
 }

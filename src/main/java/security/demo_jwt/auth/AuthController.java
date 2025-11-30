@@ -21,16 +21,23 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping(value = "login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, @RequestHeader("X-Client-Id") String apiKey, HttpServletRequest request) {
-
-        return ResponseEntity.ok(authService.login(loginRequest, request, apiKey));
-    }    
-
     @PostMapping(value = "register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest, @RequestHeader("X-Client-Id") String apiKey, HttpServletRequest request) {
 
         return ResponseEntity.ok(authService.register(registerRequest, request, apiKey));
+    }
+
+    @PostMapping(value = "login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, @RequestHeader("X-Client-Id") String apiKey, HttpServletRequest request) {
+
+        return ResponseEntity.ok(authService.login(loginRequest, request, apiKey));
+    }
+
+    @PostMapping(value = "logout")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String token){
+        authService.logout(token);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping(value = "verify")

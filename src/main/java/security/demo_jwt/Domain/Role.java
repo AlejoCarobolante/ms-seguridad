@@ -32,4 +32,15 @@ public class Role {
     )
     private List<Permission> permissions;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_app_id", nullable = false)
+    private ClientApp clientApp;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creator_user_id", nullable = false)
+    private User creator;
+
+    @ManyToMany(mappedBy = "roles")
+    private List<User> users;
+
 }
