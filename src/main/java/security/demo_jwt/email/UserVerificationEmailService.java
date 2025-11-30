@@ -17,7 +17,7 @@ public class UserVerificationEmailService {
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
 
-    public void sendVerificationEmail(String to, String username, String code, @NotBlank(message = "El nombre del sistema es obliigatorio") String name) {
+    public void sendVerificationEmail(String to, String username, String code, String organizationName) {
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
@@ -28,16 +28,17 @@ public class UserVerificationEmailService {
             String link = "http://localhost:8081/auth/verify?code=" + code;
             context.setVariable("link", link);
 
+            context.setVariable("orgName", organizationName);
 
             String htmlContent = templateEngine.process("mail-template", context);
 
             helper.setText(htmlContent, true); // true = Es HTML
             helper.setTo(to);
-            helper.setSubject("🚀 Activa tu cuenta");
+            helper.setSubject("Activa tu cuenta " + organizationName);
             helper.setFrom("no-reply@system.com");
 
             javaMailSender.send(mimeMessage);
-            System.out.println("✅ Email enviado a: " + to);
+            System.out.println("Email enviado a: " + to);
 
         } catch (MessagingException e) {
             e.printStackTrace();

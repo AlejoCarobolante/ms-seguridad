@@ -18,17 +18,17 @@
 <body>
 <div class="wrapper">
     <div class="content">
-        <div class="header"><h1>SISTEMA</h1></div>
+        <div class="header"><h1><span th:text="${orgName}">Nombre del Sistema</span></h1></div>
         <div class="body">
             <p class="greeting">¡Hola, <span th:text="${username}">Usuario</span>!</p>
-            <p>Gracias por unirte. Tu cuenta ha sido creada y está lista para ser activada.</p>
+            <p>Gracias por unirte a nuestra comunidad. Tu cuenta ha sido creada exitosamente para <strong th:text="${orgName}">la organización</strong>.</p>
             <p>Confirma tu correo haciendo clic abajo:</p>
             <div class="btn-container">
                 <a th:href="${link}" class="btn">ACTIVAR MI CUENTA</a>
             </div>
             <p style="font-size: 13px; color: #999;">Si no creaste esta cuenta, puedes ignorar este mensaje.</p>
         </div>
-        <div class="footer"><p>© 2025 Sistema Inc. Todos los derechos reservados.</p></div>
+        <div class="footer"><p>© 2025 <span th:text="${orgName}">Sistema</span> Inc. Todos los derechos reservados.</p></div>
     </div>
 </div>
 </body>
