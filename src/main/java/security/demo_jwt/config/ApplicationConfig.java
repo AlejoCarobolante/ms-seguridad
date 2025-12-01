@@ -13,9 +13,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import security.demo_jwt.domain.ClientApp;
-import security.demo_jwt.domain.ClientAppRepository;
-import security.demo_jwt.domain.UserRepository;
+import security.demo_jwt.domain.model.ClientApp;
+import security.demo_jwt.domain.repository.ClientAppRepository;
+import security.demo_jwt.domain.repository.UserRepository;
 
 @Configuration
 @RequiredArgsConstructor
