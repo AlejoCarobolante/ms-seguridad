@@ -1,14 +1,15 @@
 package security.demo_jwt.modules.user;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import security.demo_jwt.core.security.jwt.JwtService;
+import security.demo_jwt.core.security.services.UserContextService;
 import security.demo_jwt.domain.model.*;
 import security.demo_jwt.domain.repository.TokenRepository;
 import security.demo_jwt.domain.repository.UserRepository;
-import security.demo_jwt.modules.user.dto.SessionResponse;
-import security.demo_jwt.modules.user.dto.UserResponse;
+import security.demo_jwt.modules.user.dto.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +21,8 @@ public class UserService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
+    private final UserContextService userContextService;
+    private final PasswordEncoder passwordEncoder;
 
     public List<SessionResponse> getUserSessions(String currentToken){
 
@@ -105,5 +108,49 @@ public class UserService {
                         .build()
                 )
                 .collect(Collectors.toList());
+    }
+
+    public UserProfileResponse getMyProfile(String token){
+
+        User user = userContextService.getCurrentUserFromToken(token);
+
+        return UserProfileResponse.builder()
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .dateOfBirth(user.getDateOfBirth())
+                .organizationName(user.getClientApp().getName())
+                .roles(user.getRoles().stream().map(Role::getName).toList())
+                .build();
+    }
+
+    public UserProfileResponse updateMyProfile(UpdateProfileRequest request, String token){
+
+        User user = userContextService.getCurrentUserFromToken(token);
+
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setDateOfBirth(request.getDateOfBirth());
+
+        userRepository.save(user);
+
+        return getMyProfile(token);
+    }
+
+    public void changePassword(ChangePasswordRequest request, String token){
+
+        User user = userContextService.getCurrentUserFromToken(token);
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())){
+            throw new RuntimeException("La contraseña actual es incorrecta");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())){
+            throw new RuntimeException("La contraseña nueva debe ser diferente a la actual");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }
