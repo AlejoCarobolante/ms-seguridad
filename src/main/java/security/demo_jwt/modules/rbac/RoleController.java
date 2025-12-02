@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import security.demo_jwt.modules.auth.AuthService;
 import security.demo_jwt.domain.model.Role;
+import security.demo_jwt.modules.rbac.dto.PermissionAssignementRequest;
 import security.demo_jwt.modules.rbac.dto.RoleRequest;
 
 import java.util.List;
@@ -45,5 +46,15 @@ public class RoleController {
     public ResponseEntity<Void> deleteRole(@PathVariable Integer roleId, @RequestHeader(HttpHeaders.AUTHORIZATION) String token){
         roleService.deleteRole(roleId, token);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping(value = "{roleId}/permissions")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Role> assignPermissions(
+            @PathVariable Integer roleId,
+            @RequestBody PermissionAssignementRequest request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+            ){
+        return ResponseEntity.ok(roleService.assignPermissions(roleId, request, token));
     }
 }

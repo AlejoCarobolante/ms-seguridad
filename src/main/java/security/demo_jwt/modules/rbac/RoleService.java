@@ -3,9 +3,12 @@ package security.demo_jwt.modules.rbac;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import security.demo_jwt.core.security.services.UserContextService;
+import security.demo_jwt.domain.model.Permission;
 import security.demo_jwt.domain.model.Role;
 import security.demo_jwt.domain.model.User;
+import security.demo_jwt.domain.repository.PermissionRepository;
 import security.demo_jwt.domain.repository.RoleRepository;
+import security.demo_jwt.modules.rbac.dto.PermissionAssignementRequest;
 import security.demo_jwt.modules.rbac.dto.RoleRequest;
 
 import java.util.List;
@@ -16,6 +19,7 @@ public class RoleService {
 
     private final RoleRepository roleRepository;
     private final UserContextService userContextService;
+    private final PermissionRepository permissionRepository;
 
     public Role createRole(RoleRequest request, String token){
         User creator = userContextService.getCurrentUserFromToken(token);
@@ -80,5 +84,25 @@ public class RoleService {
         }
 
         roleRepository.delete(roleToDelete);
+    }
+
+    public Role assignPermissions(Integer roleId, PermissionAssignementRequest request, String token){
+        User currentUser = userContextService.getCurrentUserFromToken(token);
+
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(()-> new RuntimeException("Rol no encontrado"));
+
+        if(!role.getClientApp().getId().equals(currentUser.getClientApp().getId())){
+            throw new RuntimeException("No tienes permisos para modificar este rol");
+        }
+
+        List<Permission> permissions = permissionRepository.findByNameIn(request.getPermissions());
+
+        if(permissions.size() != request.getPermissions().size()){
+            throw new RuntimeException("Uno o mas permisos no existen en el sistema");
+        }
+
+        role.setPermissions(permissions);
+        return roleRepository.save(role);
     }
 }

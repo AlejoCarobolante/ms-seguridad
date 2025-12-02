@@ -6,7 +6,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import lombok.RequiredArgsConstructor;
 import security.demo_jwt.core.security.services.AuditService;
 import security.demo_jwt.core.email.UserVerificationEmailService;
@@ -19,13 +18,13 @@ import security.demo_jwt.domain.repository.UserRepository;
 import security.demo_jwt.modules.auth.dto.AuthResponse;
 import security.demo_jwt.modules.auth.dto.LoginRequest;
 import security.demo_jwt.modules.auth.dto.RegisterRequest;
-import security.demo_jwt.modules.rbac.dto.RoleRequest;
+import security.demo_jwt.core.email.PasswordRecoverEmailService;
+import security.demo_jwt.core.security.services.LoginAttemptService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -39,11 +38,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final UserVerificationEmailService userVerificationEmailService;
-    private final security.demo_jwt.email.PasswordRecoverEmailService passwordRecoverEmailService;
     private final TokenRepository tokenRepository;
     private final ClientAppRepository clientAppRepository;
     private final AuditService auditService;
-    private final security.demo_jwt.auth.LoginAttemptService loginAttemptService;
+    private final PasswordRecoverEmailService passwordRecoverEmailService;
+    private final LoginAttemptService loginAttemptService;
+
 
 
     public AuthResponse register(RegisterRequest registerRequest, HttpServletRequest request, String apiKey) {
