@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import security.demo_jwt.core.validation.StrongPassword;
 
 
 @Data
@@ -21,8 +22,7 @@ public class RegisterRequest {
     @NotBlank(message = "El nombre de usuario es obligatorio.")
     String username;
 
-    @NotBlank(message = "La contraseña es obligatoria.")
-            @Size(min = 8, message = "La contraseña debe contener al menos 8 caracteres.")
+    @StrongPassword
     String password;
 
     @NotBlank(message = "El nombre es obligatorio.")
