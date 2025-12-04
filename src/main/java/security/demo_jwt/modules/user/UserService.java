@@ -1,5 +1,7 @@
 package security.demo_jwt.modules.user;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -83,7 +85,7 @@ public class UserService {
         tokenRepository.delete(tokenToDelete);
     }
 
-    public List<UserResponse> getAllUsersByMyOrg(String token){
+    public Page<UserResponse> getAllUsersByMyOrg(String token, Pageable pageable){
         String cleanToken = token.startsWith("Bearer ")?token.substring(7):token;
         String adminIdString = jwtService.getUserIdFromToken(cleanToken);
         Integer adminId = Integer.parseInt(adminIdString);
@@ -91,23 +93,19 @@ public class UserService {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(()-> new RuntimeException("Administrador de la organizacion no encotnrado"));
 
-        List<User> users = userRepository.findAllByClientApp(admin.getClientApp());
+        Page<User> userPage = userRepository.findAllByClientApp(admin.getClientApp(), pageable);
 
-        return users.stream()
-                .map(u -> UserResponse.builder()
-                        .id(u.getId())
-                        .username(u.getUsername())
-                        .email(u.getEmail())
-                        .firstName(u.getFirstName())
-                        .lastName(u.getLastName())
-                        .isEnabled(u.isEnabled())
-                        .isLocked(u.isAccountNonLocked())
-                        .roles(u.getRoles().stream()
-                                .map(role -> role.getName())
-                                .collect(Collectors.toList()))
-                        .build()
-                )
-                .collect(Collectors.toList());
+        return userPage.map(u -> UserResponse.builder()
+                .id(u.getId())
+                .username(u.getUsername())
+                .email(u.getEmail())
+                .firstName(u.getFirstName())
+                .lastName(u.getLastName())
+                .isEnabled(u.isEnabled())
+                .isLocked(!u.isAccountNonLocked())
+                .roles(u.getRoles().stream().map(Role::getName).toList())
+                .build()
+        );
     }
 
     public UserProfileResponse getMyProfile(String token){

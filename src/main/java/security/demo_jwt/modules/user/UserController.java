@@ -2,6 +2,9 @@ package security.demo_jwt.modules.user;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,11 +44,13 @@ public class UserController {
         return ResponseEntity.ok(userService.getSessionByUserId(userId));
     }
 
-    @GetMapping(value = "admin/getallusers")
-    public ResponseEntity<List<UserResponse>> getAllUsers(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
-    ){
-        return ResponseEntity.ok(userService.getAllUsersByMyOrg(token));
+    @GetMapping(value = "admin/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserResponse>> getAllUsers(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
+            @PageableDefault(size = 10, sort = "email")Pageable pageable
+            ){
+        return ResponseEntity.ok(userService.getAllUsersByMyOrg(token, pageable));
     }
 
     @GetMapping(value = "me")

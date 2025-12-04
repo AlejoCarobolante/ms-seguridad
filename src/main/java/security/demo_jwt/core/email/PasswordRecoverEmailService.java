@@ -3,6 +3,7 @@ package security.demo_jwt.core.email;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,9 @@ public class PasswordRecoverEmailService{
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
 
+    @Value("${application.base-url}")
+    private String baseUrl;
+
     public void sendResetEmail(String to, String username, String token){
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
@@ -23,7 +27,7 @@ public class PasswordRecoverEmailService{
             Context context = new Context();
             context.setVariable("username", username);
 
-            String link = "http://localhost:8081/auth/recover-password?token=" + token;
+            String link = baseUrl + "/auth/recover-password?token=" + token;
             context.setVariable("link", link);
 
             String htmlContent = templateEngine.process("reset-password", context);
