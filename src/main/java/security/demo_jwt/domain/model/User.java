@@ -56,6 +56,14 @@ public class User implements UserDetails {
     @Column
     java.time.LocalDateTime resetPasswordTokenExpiry;
 
+    @Column
+    boolean accountLocked = false;
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return !accountLocked;
+    }
+
     @OneToMany(mappedBy = "user")
     List<Token> tokens;
 

@@ -77,4 +77,25 @@ public class UserController {
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
     }
 
+    @PutMapping(value = "admin/users/{userId}/role/{roleId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> changeUserRole(
+            @PathVariable Integer userId,
+            @PathVariable Integer roleId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+    ) {
+        userService.changeUserRole(userId, roleId, token);
+        return ResponseEntity.ok("Rol del usuario actualizado correctamente.");
+    }
+
+    @PutMapping(value = "admin/users/{userId}/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> toggleBanUser(
+            @PathVariable Integer userId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+    ) {
+        userService.toggleUserBan(userId, token);
+        return ResponseEntity.ok("Estado de bloqueo del usuario actualizado.");
+    }
 }
+

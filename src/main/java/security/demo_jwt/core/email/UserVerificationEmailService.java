@@ -27,7 +27,7 @@ public class UserVerificationEmailService {
             Context context = new Context();
             context.setVariable("username", username);
 
-            String link = baseUrl + "auth/verify?code=" + code;
+            String link = baseUrl + "/auth/verify?code=" + code;
             context.setVariable("link", link);
 
             context.setVariable("orgName", organizationName);
