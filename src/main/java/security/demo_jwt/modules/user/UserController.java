@@ -1,5 +1,6 @@
 package security.demo_jwt.modules.user;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -55,6 +56,7 @@ public class UserController {
 
     @GetMapping(value = "me")
     public ResponseEntity<UserProfileResponse> getMyProfile(
+            @Parameter(hidden = true)
             @RequestHeader(HttpHeaders.AUTHORIZATION) String token
     ) {
         return ResponseEntity.ok(userService.getMyProfile(token));

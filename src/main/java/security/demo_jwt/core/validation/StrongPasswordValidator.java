@@ -20,6 +20,6 @@ public class StrongPasswordValidator implements ConstraintValidator<StrongPasswo
         // (?=\S+$)          : Sin espacios en blanco
         // .{8,}             : Al menos 8 caracteres
         // $                 : Fin
-        return value.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$");
+        return value.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!.-_]).{8,}$");
     }
 }
