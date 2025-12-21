@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 
 @Entity 
 @Table(name="users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"email", "client_app_id"})
+        @UniqueConstraint(columnNames = {"credential", "client_app_id"})
 })
 @SQLDelete(sql= "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")

@@ -49,7 +49,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<UserResponse>> getAllUsers(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
-            @PageableDefault(size = 10, sort = "email")Pageable pageable
+            @PageableDefault(size = 10, sort = "credential")Pageable pageable
             ){
         return ResponseEntity.ok(userService.getAllUsersByMyOrg(token, pageable));
     }

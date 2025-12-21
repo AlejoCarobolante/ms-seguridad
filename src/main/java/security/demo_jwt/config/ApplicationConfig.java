@@ -50,7 +50,7 @@ public class ApplicationConfig {
                 ClientApp app = clientAppRepository.findByApiKey(apiKey)
                         .orElseThrow(()-> new UsernameNotFoundException("App no valida."));
 
-                return userRepository.findByEmailAndClientApp(email, app)
+                return userRepository.findByCredentialAndApp(email, app)
                         .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
             }
 

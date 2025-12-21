@@ -23,5 +23,8 @@ public class Permission extends BaseEntity{
     private Integer id;
 
     @Column(nullable = false, unique = true)
-    private String name; // Ej: "CREATE_USER", "READ_LOGS"
+    private String name;
+
+    @Column
+    private boolean isSysOnly;
 }

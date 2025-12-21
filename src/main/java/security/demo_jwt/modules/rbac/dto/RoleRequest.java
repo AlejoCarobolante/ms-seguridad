@@ -11,4 +11,6 @@ public class RoleRequest {
     String name;
 
     String description;
+
+    private Integer targetCientAppId;
 }

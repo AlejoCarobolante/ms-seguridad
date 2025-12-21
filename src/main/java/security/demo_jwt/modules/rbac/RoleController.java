@@ -23,33 +23,33 @@ public class RoleController {
     private final RoleService roleService;
 
     @PostMapping(value = "create")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Role> createRole(@Valid @RequestBody RoleRequest request, @RequestHeader(HttpHeaders.AUTHORIZATION) String token){
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(roleService.createRole(request, token));
     }
 
     @GetMapping(value = "get")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<List<Role>> listRoles(@RequestHeader(HttpHeaders.AUTHORIZATION) String token){
         return ResponseEntity.ok(roleService.getAllRoles(token));
     }
 
     @PutMapping(value = "update/{roleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Role> updateRole(@PathVariable Integer roleId, @Valid @RequestBody RoleRequest request, @RequestHeader(HttpHeaders.AUTHORIZATION) String token){
         return ResponseEntity.ok(roleService.updateRole(roleId, request, token));
     }
 
     @DeleteMapping(value = "delete/{roleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Void> deleteRole(@PathVariable Integer roleId, @RequestHeader(HttpHeaders.AUTHORIZATION) String token){
         roleService.deleteRole(roleId, token);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping(value = "{roleId}/permissions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Role> assignPermissions(
             @PathVariable Integer roleId,
             @RequestBody PermissionAssignementRequest request,

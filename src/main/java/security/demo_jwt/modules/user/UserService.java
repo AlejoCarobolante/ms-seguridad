@@ -147,7 +147,6 @@ public class UserService {
     private void checkPasswordHistory(User user, String newPassword){
         List<PasswordHistory> history = passwordHistoryRepository.findLastPasswords(user.getId());
 
-        //REvisar anteriores
         int limit = 3;
         for(int i = 0; i< Math.min(history.size(),limit); i++){
             String oldHash = history.get(i).getPassword();
@@ -177,9 +176,6 @@ public class UserService {
 
         checkPasswordHistory(user, request.getNewPassword());
         saveToHistory(user);
-
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);

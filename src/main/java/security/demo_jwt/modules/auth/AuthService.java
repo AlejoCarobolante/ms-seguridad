@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +51,7 @@ public class AuthService {
 
         ClientApp app = clientAppRepository.findByApiKey(apiKey)
                 .orElseThrow(()-> new RuntimeException("API KEY Invalida."));
-        if (userRepository.findByEmailAndClientApp(registerRequest.getEmail(), app).isPresent()) {
+        if (userRepository.findByCredentialAndApp(registerRequest.getEmail(), app).isPresent()) {
             throw new RuntimeException("El usuario ya existe en esta organizacion.");
         }
 
@@ -94,7 +95,7 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest loginRequest, HttpServletRequest request, String apiKey) {
 
-        if(loginAttemptService.isBlocked(loginRequest.getEmail())){
+        if(loginAttemptService.isBlocked(loginRequest.getCredential())){
             throw new RuntimeException("Cuenta temporalmente bloqueada.");
         }
 
@@ -103,23 +104,22 @@ public class AuthService {
 
         try{
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getEmail() + ":" + apiKey, loginRequest.getPassword())
+                    new UsernamePasswordAuthenticationToken(loginRequest.getCredential() + ":" + apiKey, loginRequest.getPassword())
             );
 
-            loginAttemptService.loginSucceded(loginRequest.getEmail());
+            loginAttemptService.loginSucceded(loginRequest.getCredential());
         } catch (BadCredentialsException e){
-            loginAttemptService.loginFailed(loginRequest.getEmail());
+            loginAttemptService.loginFailed(loginRequest.getCredential());
             throw e;
         }
 
-
-
-        var user = userRepository.findByEmailAndClientApp(loginRequest.getEmail(), app).orElseThrow();
+        var user = userRepository.findByCredentialAndApp(loginRequest.getCredential(), app)
+                .orElseThrow(() -> new UsernameNotFoundException("Credenciales incorrectas"));
 
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginRequest.getEmail() + ":" + apiKey,
+                            loginRequest.getCredential() + ":" + apiKey,
                             loginRequest.getPassword()
                     )
             );
@@ -127,7 +127,7 @@ public class AuthService {
 
             auditService.log(
                     AuditAction.LOGIN_FAILED,
-                    loginRequest.getEmail(),
+                    loginRequest.getCredential(),
                     "Credenciales incorrectas",
                     app.getName(),
                     request
@@ -164,25 +164,25 @@ public class AuthService {
         }
     }
 
-    public String verifyUser(String code){
+    public void verifyUser(String code) {
         User user = userRepository.findByVerificationCode(code)
-                .orElseThrow(() -> new RuntimeException("Codigo o Usuario Invalido"));
-        Role userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new RuntimeException("Rol USER no configurado"));
-        List<Role> newRole = new ArrayList<>();
-        newRole.add(userRole);
-        user.setRoles(newRole);
-        user.setVerificationCode(null);
+                .orElseThrow(() -> new RuntimeException("Código inválido o usuario no encontrado"));
 
+        ClientApp userTenant = user.getClientApp();
+        Role finalUserRole = roleRepository.findByNameAndClientApp("USER", userTenant)
+                .orElseThrow(() -> new RuntimeException("Error Crítico: El tenant " + userTenant.getName() + " no tiene configurado el rol base 'USER'"));
+
+        user.getRoles().removeIf(role -> role.getName().equals("PENDING_VALIDATION"));
+        user.getRoles().add(finalUserRole);
+        user.setVerificationCode(null);
         userRepository.save(user);
 
-        return "Cuenta verificada con exito";
     }
 
     public void forgotPassword(String email, String apiKey){
         ClientApp app = clientAppRepository.findByApiKey(apiKey)
                 .orElseThrow(() -> new RuntimeException("API KEY Invalida"));
-        User user = userRepository.findByEmailAndClientApp(email, app)
+        User user = userRepository.findByCredentialAndApp(email, app)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         String token = UUID.randomUUID().toString();

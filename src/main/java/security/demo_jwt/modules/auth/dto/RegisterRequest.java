@@ -34,7 +34,7 @@ public class RegisterRequest {
     @NotNull(message = "La fecha de nacimiento es obligatoria.")
     Date dateOfBirth;
 
-    @NotBlank(message = "El email es obligatorio.")
-            @Email(message = "El formato del email no es valido.")
+    @NotBlank(message = "El credential es obligatorio.")
+            @Email(message = "El formato del credential no es valido.")
     String email;
 }
