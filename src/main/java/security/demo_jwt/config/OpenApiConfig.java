@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
         info = @Info(
                 contact = @Contact(name = "Alejo", email = "alejocarobolante@gmail.com"),
-                description = "Documentación de la API de Seguridad de Alejo",
+                description = "Documentación de la API de Seguridad",
                 title = "Auth API",
                 version = "1.0"
         ),

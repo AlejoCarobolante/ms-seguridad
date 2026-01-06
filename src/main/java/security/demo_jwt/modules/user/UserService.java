@@ -4,7 +4,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import lombok.RequiredArgsConstructor;
 import security.demo_jwt.core.security.jwt.JwtService;
 import security.demo_jwt.core.security.services.UserContextService;
@@ -15,7 +14,6 @@ import security.demo_jwt.domain.repository.TokenRepository;
 import security.demo_jwt.domain.repository.UserRepository;
 import security.demo_jwt.modules.auth.AuthService;
 import security.demo_jwt.modules.user.dto.*;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,13 +32,17 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final AuthService authService;
 
+    public User getUserFromToken(String token) {
+        return userContextService.getCurrentUserFromToken(token);
+    }
+
     public List<SessionResponse> getUserSessions(String currentToken){
 
         String cleanToken = currentToken.startsWith("Bearer ")?currentToken.substring(7):currentToken;
         String userIdString = jwtService.getUserIdFromToken(cleanToken);
 
         Integer userId = Integer.parseInt(userIdString);
-        User user = userRepository.findById(userId) // findById(Integer) ahora funciona
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario logueado no encontrado."));
 
         List<Token> tokens = tokenRepository.findAllValidTokenByUser(user.getId());
@@ -181,25 +183,70 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void changeUserRole(Integer userId, Integer roleId, String token){
+    public void addRoleToUser(Integer userId, Integer roleId, String token) {
         User admin = userContextService.getCurrentUserFromToken(token);
+        User targetUser = getUserAndValidateTenant(userId, admin);
+        Role role = getRoleAndValidateTenant(roleId, admin);
 
-        User targetUser = userRepository.findById(userId)
-                .orElseThrow(()-> new RuntimeException("Usuario objetivo no encontrado"));
-
-        if (!targetUser.getClientApp().getId().equals(admin.getClientApp().getId())){
-            throw new RuntimeException("Permisos insuficientes para gestionar roles de otros usuarios");
+        if (targetUser.getRoles().contains(role)) {
+            throw new RuntimeException("El usuario ya posee este rol.");
         }
 
-        Role newRole = roleRepository.findById(roleId)
-                .orElseThrow(()-> new RuntimeException("Rol no encontrado"));
-
-        if (!newRole.getClientApp().getId().equals(admin.getClientApp().getId())){
-            throw new RuntimeException("El rol no pertenece a tu organizacion");
-        }
-
-        targetUser.setRoles(new ArrayList<>(List.of(newRole)));
+        targetUser.getRoles().add(role);
         userRepository.save(targetUser);
+    }
+
+    public void removeRoleFromUser(Integer userId, Integer roleId, String token) {
+        User admin = userContextService.getCurrentUserFromToken(token);
+        User targetUser = getUserAndValidateTenant(userId, admin);
+        Role role = getRoleAndValidateTenant(roleId, admin);
+
+        if (!targetUser.getRoles().contains(role)) {
+            throw new RuntimeException("El usuario no tiene este rol asignado.");
+        }
+
+        if (targetUser.getRoles().size() == 1) {
+            throw new RuntimeException("El usuario debe tener al menos un rol.");
+        }
+
+        targetUser.getRoles().remove(role);
+        userRepository.save(targetUser);
+    }
+
+    public void updateUserRoles(Integer userId, List<Integer> roleIds, String token) {
+        User admin = userContextService.getCurrentUserFromToken(token);
+        User targetUser = getUserAndValidateTenant(userId, admin);
+
+        List<Role> newRoles = new ArrayList<>();
+        for (Integer rId : roleIds) {
+            newRoles.add(getRoleAndValidateTenant(rId, admin));
+        }
+
+        if (newRoles.isEmpty()) {
+            throw new RuntimeException("La lista de roles no puede estar vacía.");
+        }
+        targetUser.setRoles(newRoles);
+        userRepository.save(targetUser);
+    }
+
+    private User getUserAndValidateTenant(Integer userId, User admin) {
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario objetivo no encontrado"));
+
+        if (!targetUser.getClientApp().getId().equals(admin.getClientApp().getId())) {
+            throw new RuntimeException("Permisos insuficientes: El usuario no pertenece a tu organización");
+        }
+        return targetUser;
+    }
+
+    private Role getRoleAndValidateTenant(Integer roleId, User admin) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+
+        if (!role.getClientApp().getId().equals(admin.getClientApp().getId())) {
+            throw new RuntimeException("Error de seguridad: Intentas asignar un rol que no pertenece a tu organización");
+        }
+        return role;
     }
 
     public void toggleUserBan(Integer userId, String token){
@@ -224,5 +271,21 @@ public class UserService {
         if(toggleBan){
             authService.revokeAllUserTokens(targetUser);
         }
+    }
+
+    public void updateMfaSecret(Integer userId, String secret) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        user.setMfaSecret(secret);
+        userRepository.save(user);
+    }
+
+    public void enableMfa(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        user.setMfaEnabled(true);
+        userRepository.save(user);
     }
 }

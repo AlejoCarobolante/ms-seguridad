@@ -32,4 +32,12 @@ public class ClientApp extends BaseEntity{
     @Column(nullable = false, unique = true)
     @NotBlank(message = "La API KEY es obligatoria")
     String apiKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mfa_policy")
+    private MfaPolicy mfaPolicy = MfaPolicy.DISABLED;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "master_app_id")
+    private MasterApp masterApp;
 }

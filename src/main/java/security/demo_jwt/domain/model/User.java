@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -59,6 +60,13 @@ public class User extends BaseEntity implements UserDetails {
 
     @Column
     java.time.LocalDateTime resetPasswordTokenExpiry;
+
+    @Column(name = "mfa_enabled")
+    private boolean mfaEnabled = false;
+
+    @Column(name = "mfa_secret")
+    @JsonIgnore
+    private String mfaSecret;
 
     @Column
     boolean accountLocked = false;

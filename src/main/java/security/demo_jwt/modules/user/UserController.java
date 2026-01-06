@@ -38,7 +38,7 @@ public class UserController {
     }
 
     @GetMapping(value = "admin/users/{userId}/sessions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<List<SessionResponse>> getAllUserSessions(
             @PathVariable Integer userId
     ){
@@ -46,7 +46,7 @@ public class UserController {
     }
 
     @GetMapping(value = "admin/users")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Page<UserResponse>> getAllUsers(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
             @PageableDefault(size = 10, sort = "credential")Pageable pageable
@@ -79,19 +79,53 @@ public class UserController {
         return ResponseEntity.ok("Contraseña actualizada correctamente.");
     }
 
+    //REVISAR
     @PutMapping(value = "admin/users/{userId}/role/{roleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<String> changeUserRole(
             @PathVariable Integer userId,
             @PathVariable Integer roleId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String token
     ) {
-        userService.changeUserRole(userId, roleId, token);
+        userService.addRoleToUser(userId, roleId, token);
         return ResponseEntity.ok("Rol del usuario actualizado correctamente.");
     }
 
+    @PostMapping(value = "admin/users/{userId}/roles/{roleId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
+    public ResponseEntity<String> addRoleToUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer roleId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+    ) {
+        userService.addRoleToUser(userId, roleId, token);
+        return ResponseEntity.ok("Rol agregado al usuario correctamente.");
+    }
+
+    @DeleteMapping(value = "admin/users/{userId}/roles/{roleId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
+    public ResponseEntity<String> removeRoleFromUser(
+            @PathVariable Integer userId,
+            @PathVariable Integer roleId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+    ) {
+        userService.removeRoleFromUser(userId, roleId, token);
+        return ResponseEntity.ok("Rol eliminado del usuario correctamente.");
+    }
+
+    @PutMapping(value = "admin/users/{userId}/roles")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
+    public ResponseEntity<String> updateUserRoles(
+            @PathVariable Integer userId,
+            @RequestBody UpdateUserRolesRequest request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+    ) {
+        userService.updateUserRoles(userId, request.getRoleIds(), token);
+        return ResponseEntity.ok("Lista de roles actualizada correctamente.");
+    }
+
     @PutMapping(value = "admin/users/{userId}/ban")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<String> toggleBanUser(
             @PathVariable Integer userId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String token

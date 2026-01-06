@@ -29,16 +29,20 @@ public class JwtService {
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
+    @Value("${application.security.mfa.temp-token.expiration}")
+    private long tempTokenExpiration;
 
     public String getToken(UserDetails user) {
         return buildToken(new HashMap<>(), user, jwtExpiration);
     }
 
-
     public String getRefreshToken(UserDetails user) {
         return buildToken(new HashMap<>(), user, refreshExpiration);
     }
 
+    public String generateTempToken(UserDetails user) {
+        return buildToken(new HashMap<>(), user, 300000);
+    }
 
     private String buildToken(Map<String, Object> extractClaims, UserDetails user, long expiration) {
         String userId = ((User) user).getId().toString();
@@ -60,7 +64,6 @@ public class JwtService {
     public String getUserIdFromToken(String token) {
         return getClaim(token, Claims::getSubject);
     }
-
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String idFromToken = getUserIdFromToken(token);

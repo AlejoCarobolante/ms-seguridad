@@ -1,0 +1,6 @@
+ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(255);
+
+ALTER TABLE client_apps ADD COLUMN mfa_policy VARCHAR(20) DEFAULT 'DISABLED';
+
+UPDATE client_apps SET mfa_policy = 'OPTIONAL' WHERE api_key = 'SEC_MASTER_KEY_999';

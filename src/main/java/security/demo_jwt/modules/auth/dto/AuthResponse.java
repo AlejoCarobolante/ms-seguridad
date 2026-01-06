@@ -17,4 +17,16 @@ public class AuthResponse {
 
     @JsonProperty("refresh_token")
     String refreshToken;
+
+    @JsonProperty("mfa_required")
+    boolean mfaRequired;
+
+    @JsonProperty("mfa_setup_required")
+    boolean mfaSetupRequired;
+
+    @JsonProperty("mfa_enabled")
+    private boolean mfaEnabled;
+
+    @JsonProperty("temp_token")
+    String tempToken;
 }
