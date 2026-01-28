@@ -54,7 +54,8 @@ public class RoleService {
     }
 
     public List<Role> getAllRoles(String currentToken){
-        User currentUser = userContextService.getCurrentUserFromToken(currentToken);
+        User currentUser = userContextService.getCurrentUser();
+        System.out.println(currentUser.getEmail());
 
         boolean isSudo = currentUser.getRoles().stream()
                 .anyMatch(r -> r.getName().equals("ROLE_SUPER_ADMIN"));

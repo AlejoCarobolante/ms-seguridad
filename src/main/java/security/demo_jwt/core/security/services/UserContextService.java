@@ -5,31 +5,47 @@ import org.springframework.stereotype.Service;
 import security.demo_jwt.core.security.jwt.JwtService;
 import security.demo_jwt.domain.model.User;
 import security.demo_jwt.domain.repository.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 @RequiredArgsConstructor
 public class UserContextService {
 
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
+    public User getCurrentUser() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
 
-    public User getCurrentUserFromToken(String token){
-        final String cleanToken = token.startsWith("Bearer ")?token.substring(7):token;
-        final String userIdString = jwtService.getUserIdFromToken(cleanToken);
-
-        if(userIdString == null){
-            throw new RuntimeException("Token invalido o sin usuario");
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Usuario no autenticado");
         }
 
-        Integer userId;
-        try {
-            userId = Integer.parseInt(userIdString);
-        } catch (NumberFormatException e){
-            throw new RuntimeException("ID de usuario en el token no es un numero valido");
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof User user)) {
+            throw new AccessDeniedException("Principal inválido");
         }
 
-        return userRepository.findById(userId)
-                .orElseThrow(()-> new RuntimeException("Usuario no encontrado para el ID en el token"));
+        return user;
     }
 
+    public boolean isSuperAdmin() {
+        return getCurrentUser().getRoles()
+                .stream()
+                .anyMatch(r -> r.getName().equals("ROLE_SUPER_ADMIN"));
+    }
+
+    public boolean isTenantAdmin() {
+        return getCurrentUser().getRoles()
+                .stream()
+                .anyMatch(r -> r.getName().equals("ROLE_TENANT_ADMIN"));
+    }
+
+    public boolean isReadOnly() {
+        return getCurrentUser().getRoles()
+                .stream()
+                .anyMatch(r -> r.getName().equals("ROLE_SUPPORT"));
+    }
 }
+
