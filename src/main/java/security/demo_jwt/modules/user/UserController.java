@@ -9,7 +9,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import security.demo_jwt.domain.model.User;
 import security.demo_jwt.modules.user.dto.*;
 
 import java.util.List;
@@ -56,18 +58,19 @@ public class UserController {
 
     @GetMapping(value = "me")
     public ResponseEntity<UserProfileResponse> getMyProfile(
-            @Parameter(hidden = true)
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(userService.getMyProfile(token));
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(userService.getMyProfile(user));
     }
 
     @PutMapping(value = "me")
     public ResponseEntity<UserProfileResponse> updateProfile(
             @Valid @RequestBody UpdateProfileRequest request,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String token
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(userService.updateMyProfile(request, token));
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(userService.updateMyProfile(request, user));
     }
 
     @PutMapping(value = "me/password")

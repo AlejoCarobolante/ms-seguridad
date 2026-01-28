@@ -118,24 +118,12 @@ public class UserService {
         );
     }
 
-    public UserProfileResponse getMyProfile(String token){
+    public UserProfileResponse getMyProfile(User user){
 
-        User user = userContextService.getCurrentUserFromToken(token);
-
-        return UserProfileResponse.builder()
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .dateOfBirth(user.getDateOfBirth())
-                .organizationName(user.getClientApp().getName())
-                .roles(user.getRoles().stream().map(Role::getName).toList())
-                .build();
+        return UserMapper.toUserProfileResponse(user);
     }
 
-    public UserProfileResponse updateMyProfile(UpdateProfileRequest request, String token){
-
-        User user = userContextService.getCurrentUserFromToken(token);
+    public UserProfileResponse updateMyProfile(UpdateProfileRequest request, User user){
 
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -143,7 +131,7 @@ public class UserService {
 
         userRepository.save(user);
 
-        return getMyProfile(token);
+        return getMyProfile(user);
     }
 
     private void checkPasswordHistory(User user, String newPassword){

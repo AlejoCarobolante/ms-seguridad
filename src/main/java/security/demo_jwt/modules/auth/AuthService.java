@@ -1,6 +1,7 @@
 package security.demo_jwt.modules.auth;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -164,6 +165,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public void verifyUser(String code) {
         User user = userRepository.findByVerificationCode(code)
                 .orElseThrow(() -> new RuntimeException("Código inválido o usuario no encontrado"));

@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @Builder
 public class UserProfileResponse {
+    private Integer id;
     private String username;
     private String email;
     private String firstName;
