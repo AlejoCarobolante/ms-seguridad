@@ -26,25 +26,25 @@ public class RoleController {
     @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Role> createRole(@Valid @RequestBody RoleRequest request, @RequestHeader(HttpHeaders.AUTHORIZATION) String token){
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(roleService.createRole(request, token));
+                .body(roleService.createRole(request));
     }
 
     @GetMapping(value = "get")
     @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<List<Role>> listRoles(@RequestHeader(HttpHeaders.AUTHORIZATION) String token){
-        return ResponseEntity.ok(roleService.getAllRoles(token));
+        return ResponseEntity.ok(roleService.getAllRoles());
     }
 
     @PutMapping(value = "update/{roleId}")
     @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Role> updateRole(@PathVariable Integer roleId, @Valid @RequestBody RoleRequest request, @RequestHeader(HttpHeaders.AUTHORIZATION) String token){
-        return ResponseEntity.ok(roleService.updateRole(roleId, request, token));
+        return ResponseEntity.ok(roleService.updateRole(roleId, request));
     }
 
     @DeleteMapping(value = "delete/{roleId}")
     @PreAuthorize("hasRole('SUPER_ADMIN', 'ROLE_SUPER_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<Void> deleteRole(@PathVariable Integer roleId, @RequestHeader(HttpHeaders.AUTHORIZATION) String token){
-        roleService.deleteRole(roleId, token);
+        roleService.deleteRole(roleId);
         return ResponseEntity.noContent().build();
     }
 
@@ -55,6 +55,6 @@ public class RoleController {
             @RequestBody PermissionAssignementRequest request,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String token
             ){
-        return ResponseEntity.ok(roleService.assignPermissions(roleId, request, token));
+        return ResponseEntity.ok(roleService.assignPermissions(roleId, request));
     }
 }

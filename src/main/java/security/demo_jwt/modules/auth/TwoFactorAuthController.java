@@ -2,7 +2,6 @@ package security.demo_jwt.modules.auth;
 
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -11,9 +10,11 @@ import security.demo_jwt.core.security.jwt.JwtService;
 import security.demo_jwt.domain.model.MfaPolicy;
 import security.demo_jwt.domain.model.User;
 import security.demo_jwt.modules.auth.dto.AuthResponse;
-import security.demo_jwt.modules.user.UserService;
 import security.demo_jwt.modules.auth.dto.MfaResponse;
 import security.demo_jwt.modules.auth.dto.MfaVerificationRequest;
+import security.demo_jwt.core.security.services.UserContextService;
+import security.demo_jwt.domain.repository.UserRepository;
+
 
 @RestController
 @RequestMapping("/api/v1/mfa")
@@ -21,51 +22,59 @@ import security.demo_jwt.modules.auth.dto.MfaVerificationRequest;
 public class TwoFactorAuthController {
 
     private final TwoFactorAuthService tfaService;
-    private final UserService userService;
+    private final UserContextService userContextService;
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @PostMapping("/generate")
-    public ResponseEntity<MfaResponse> generate(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
-        User user = userService.getUserFromToken(token);
+    public ResponseEntity<MfaResponse> generate() {
+
+        User user = userContextService.getCurrentUser();
 
         if (user.getClientApp().getMfaPolicy() == MfaPolicy.DISABLED) {
-            throw new AccessDeniedException("MFA no disponible en tenant.");
+            throw new AccessDeniedException("MFA no disponible");
         }
-        String organizationName = user.getClientApp().getName();
 
         String secret = tfaService.generateNewSecret();
-
-        String qrUri = tfaService.generateQRCodeImage(secret, user.getEmail(), organizationName);
-
-        userService.updateMfaSecret(user.getId(), secret);
+        String qrUri = tfaService.generateQRCodeImage(
+                secret,
+                user.getEmail(),
+                user.getClientApp().getName()
+        );
 
         return ResponseEntity.ok(new MfaResponse(secret, qrUri));
     }
 
+
     @PostMapping("/verify")
     public ResponseEntity<AuthResponse> verify(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String token,
             @RequestBody MfaVerificationRequest request
     ) {
-        User user = userService.getUserFromToken(token);
+        User user = userContextService.getCurrentUser();
 
-        boolean isValid = tfaService.isOtpValid(user.getMfaSecret(), request.getCode());
+        boolean isValid = tfaService.isOtpValid(
+                user.getMfaSecret(),
+                request.getCode()
+        );
 
         if (!isValid) {
             throw new BadCredentialsException("Código MFA incorrecto");
         }
 
         if (!user.isMfaEnabled()) {
-            userService.enableMfa(user.getId());
+            user.setMfaEnabled(true);
+            userRepository.save(user);
         }
 
-        var jwtToken = jwtService.getToken(user);
-        var refreshToken = jwtService.getRefreshToken(user);
+        String accessToken = jwtService.getToken(user);
+        String refreshToken = jwtService.getRefreshToken(user);
 
-        return ResponseEntity.ok(AuthResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .mfaEnabled(true)
-                .build());
+        return ResponseEntity.ok(
+                AuthResponse.builder()
+                        .accessToken(accessToken)
+                        .refreshToken(refreshToken)
+                        .mfaEnabled(true)
+                        .build()
+        );
     }
 }

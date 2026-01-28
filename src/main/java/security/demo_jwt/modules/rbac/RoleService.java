@@ -28,8 +28,8 @@ public class RoleService {
     private final ClientAppRepository clientAppRepository;
     private final JwtService jwtService;
 
-    public Role createRole(RoleRequest request, String token){
-        User currentUser = userContextService.getCurrentUserFromToken(token);
+    public Role createRole(RoleRequest request){
+        User currentUser = userContextService.getCurrentUser();
 
         //REEMPLAZAR EL ID HARDCODEADO POR UN SECRET
         boolean isSudo = currentUser.getClientApp().getId() == 1 && currentUser.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_SUPER_ADMIN"));
@@ -53,7 +53,7 @@ public class RoleService {
         return roleRepository.save(newRole);
     }
 
-    public List<Role> getAllRoles(String currentToken){
+    public List<Role> getAllRoles(){
         User currentUser = userContextService.getCurrentUser();
         System.out.println(currentUser.getEmail());
 
@@ -67,8 +67,8 @@ public class RoleService {
         }
     }
 
-    public Role updateRole(Integer roleId, RoleRequest request, String currentToken){
-        User currentUser = userContextService.getCurrentUserFromToken(currentToken);
+    public Role updateRole(Integer roleId, RoleRequest request){
+        User currentUser = userContextService.getCurrentUser();
         Role roleToUpdate = roleRepository.findById(roleId)
                 .orElseThrow(()-> new RuntimeException("Rol no encontrado."));
 
@@ -85,8 +85,8 @@ public class RoleService {
         return roleRepository.save(roleToUpdate);
     }
 
-    public void deleteRole(Integer roleId, String currentToken) {
-        User currentUser = userContextService.getCurrentUserFromToken(currentToken);
+    public void deleteRole(Integer roleId) {
+        User currentUser = userContextService.getCurrentUser();
         Role roleToDelete = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Rol a eliminar no encontrado."));
 
@@ -108,8 +108,8 @@ public class RoleService {
         roleRepository.delete(roleToDelete);
     }
 
-    public Role assignPermissions(Integer roleId, PermissionAssignementRequest request, String currentToken) {
-        User currentUser = userContextService.getCurrentUserFromToken(currentToken);
+    public Role assignPermissions(Integer roleId, PermissionAssignementRequest request) {
+        User currentUser = userContextService.getCurrentUser();
         Role roleToUpdate = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
 
