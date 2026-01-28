@@ -26,5 +26,6 @@ public class Permission extends BaseEntity{
     private String name;
 
     @Column
-    private boolean isSysOnly;
+    @Builder.Default
+    private Boolean isSysOnly = false;
 }

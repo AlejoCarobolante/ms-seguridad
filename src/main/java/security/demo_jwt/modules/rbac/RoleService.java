@@ -123,7 +123,7 @@ public class RoleService {
 
         if (!isSudo) {
             List<String> forbidden = permissions.stream()
-                    .filter(Permission::isSysOnly)
+                    .filter(p -> Boolean.TRUE.equals(p.getIsSysOnly()))
                     .map(Permission::getName)
                     .toList();
 
